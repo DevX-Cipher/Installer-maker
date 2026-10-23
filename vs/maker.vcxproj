@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <ProjectGuid>{7A3C1E20-4B5D-4F60-8A71-1B2C3D4E5F02}</ProjectGuid>
+    <RootNamespace>maker</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="common.props" />
+  </ImportGroup>
+  <PropertyGroup>
+    <RepoRoot>$(MSBuildThisFileDirectory)..\</RepoRoot>
+    <TargetName>installer-maker</TargetName>
+    <GenerateManifest>false</GenerateManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(RepoRoot)src\common;$(RepoRoot)src\maker;$(RepoRoot)third_party\lzma;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <!-- $(OutDir) holds stub.exe, which maker.rc embeds; the solution builds stub first -->
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(RepoRoot)src\maker;$(RepoRoot)src\common;$(OutDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalDependencies>shell32.lib;ole32.lib;uuid.lib;advapi32.lib;user32.lib;gdi32.lib;gdiplus.lib;comdlg32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\maker\maker.c" />
+    <ClCompile Include="..\src\maker\packer.c" />
+    <ClCompile Include="..\src\common\common.c" />
+    <ClCompile Include="..\src\common\config.c" />
+    <ClCompile Include="..\src\common\draw.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\src\maker\maker.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\maker\packer.h" />
+    <ClInclude Include="..\src\maker\resource.h" />
+    <ClInclude Include="..\src\common\appicon.h" />
+    <ClInclude Include="..\src\common\common.h" />
+    <ClInclude Include="..\src\common\draw.h" />
+    <ClInclude Include="..\src\common\payload.h" />
+    <ClInclude Include="..\third_party\lzma\lzma_decoder.h" />
+    <ClInclude Include="..\third_party\lzma\lzma_encoder.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\src\maker\app.manifest" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>
