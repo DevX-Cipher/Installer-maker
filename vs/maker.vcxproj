@@ -57,6 +57,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\common\payload.c" />
     <ClCompile Include="..\src\maker\maker.c" />
     <ClCompile Include="..\src\maker\packer.c" />
     <ClCompile Include="..\src\common\common.c" />

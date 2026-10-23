@@ -24,25 +24,60 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\stub\stub.c"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="..\src\stub\install.c"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="..\src\stub\ui.c"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="..\src\stub\uninstall_mode.c"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="..\src\common\common.c"><Filter>Source Files\common</Filter></ClCompile>
-    <ClCompile Include="..\src\common\config.c"><Filter>Source Files\common</Filter></ClCompile>
-    <ClCompile Include="..\src\common\draw.c"><Filter>Source Files\common</Filter></ClCompile>
-    <ClCompile Include="..\src\common\payload.c"><Filter>Source Files\common</Filter></ClCompile>
+    <ClCompile Include="..\src\stub\stub.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\stub\install.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\stub\ui.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\stub\uninstall_mode.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\common\common.c">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\common\config.c">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\common\draw.c">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\common\payload.c">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\stub\install.h"><Filter>Header Files</Filter></ClInclude>
-    <ClInclude Include="..\src\common\appicon.h"><Filter>Header Files\common</Filter></ClInclude>
-    <ClInclude Include="..\src\common\common.h"><Filter>Header Files\common</Filter></ClInclude>
-    <ClInclude Include="..\src\common\draw.h"><Filter>Header Files\common</Filter></ClInclude>
-    <ClInclude Include="..\src\common\payload.h"><Filter>Header Files\common</Filter></ClInclude>
-    <ClInclude Include="..\third_party\lzma\lzma_decoder.h"><Filter>Header Files\third_party</Filter></ClInclude>
+    <ClInclude Include="..\src\stub\install.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\common\appicon.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\common\common.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\common\draw.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\common\payload.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\lzma\lzma_decoder.h">
+      <Filter>Header Files\third_party</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\lzma\unzip.h">
+      <Filter>Header Files\third_party</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\src\stub\stub.rc"><Filter>Resource Files</Filter></ResourceCompile>
-    <None Include="..\src\stub\app.manifest"><Filter>Resource Files</Filter></None>
+    <ResourceCompile Include="..\src\stub\stub.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+    <None Include="..\src\stub\app.manifest">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

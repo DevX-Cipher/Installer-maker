@@ -17,25 +17,25 @@
 enum { PG_WELCOME, PG_DETAILS, PG_FILES, PG_OPTIONS, PG_DESIGN, PG_OUTPUT, PG_BUILD, PG_DONE, PG_COUNT };
 enum { NAV_COUNT = 7 };
 enum {
-	F_NAME, F_VERSION, F_PUB, F_DESC, F_SRC, F_EXE, F_CTX, F_OUT, F_COUNT
+	F_NAME, F_VERSION, F_PUB, F_DESC, F_SRC, F_EXE, F_CTX, F_OUT, F_URL, F_SHA, F_COUNT
 };
 enum {
 	ID_NONE, ID_CANCEL, ID_BACK, ID_NEXT, ID_FINISH, ID_BROWSE_SRC, ID_BROWSE_EXE, ID_BROWSE_OUT,
 	ID_CHK_ALL, ID_CHK_DESK, ID_CHK_LAUNCH, ID_CHK_CTX, ID_SHOW, ID_AGAIN,
 	ID_PICK_ICON, ID_PICK_LOGO, ID_PICK_BANNER, ID_CLR_ICON, ID_CLR_LOGO, ID_CLR_BANNER,
-	ID_THEME
+	ID_THEME, ID_SRC_FILES, ID_SRC_LINK
 };
 enum { SLOT_ICON, SLOT_LOGO, SLOT_BANNER, SLOT_COUNT };
 #define IK_HOT 100   /* invisible click target; drawn by the design preview */
 
 typedef struct { HWND h; int page; int x1, y1, x2, y2; int maxlen; } Field;
 
-static const WCHAR* s_nav[NAV_COUNT] = { L"Welcome", L"Details", L"Files", L"Options", L"Design", L"Build", L"Finish" };
-static const WCHAR* s_title[PG_COUNT] = { L"Welcome", L"App details", L"App files", L"Options", L"Design", L"Output", L"Building", L"Finish" };
+static const WCHAR* s_nav[NAV_COUNT] = { L"Welcome", L"Details", L"Source", L"Options", L"Design", L"Build", L"Finish" };
+static const WCHAR* s_title[PG_COUNT] = { L"Welcome", L"App details", L"App source", L"Options", L"Design", L"Output", L"Building", L"Finish" };
 static const WCHAR* s_sub[PG_COUNT] = {
 	L"Create a Windows installer",
 	L"Name your app",
-	L"Choose what goes in the installer",
+	L"Choose where your app's files come from",
 	L"Choose how setup behaves",
 	L"Add your icon and images (optional)",
 	L"Choose where to save it",
@@ -51,6 +51,7 @@ static Field   g_f[F_COUNT];
 static Item    g_it[MAXIT];
 static int     g_nit, g_page, g_hov = -1, g_tracking;
 static int     g_allusers, g_desktop = 1, g_launch = 1, g_ctx;
+static int     g_link;
 static int     g_building, g_ok, g_pct, g_nlog;
 static WCHAR   g_msg[200], g_status[200], g_err[300], g_summary[120], g_note[120];
 static WCHAR   g_log[LOG_MAX][120];
@@ -92,6 +93,7 @@ static void add(int kind, int id, const WCHAR* text, int enabled, int l, int t, 
 	it->kind = kind; it->id = id; it->text = text; it->enabled = enabled;
 	it->r = R(l, t, r, b);
 	it->val = chk_ptr(id);
+	it->sel = 0;
 }
 
 static void build_items(void)
@@ -112,12 +114,25 @@ static void build_items(void)
 		break;
 
 	case PG_FILES:
-		add(IK_HEAD, 0, L"APP FOLDER (EVERYTHING INSIDE IS PACKED)", 1, 208, 72, 650, 92);
-		add(IK_BTN, ID_BROWSE_SRC, L"Browse", 1, 554, 94, 650, 124);
-		add(IK_NOTE, 0, g_summary, 1, 208, 128, 650, 148);
-		add(IK_HEAD, 0, L"MAIN PROGRAM (RELATIVE PATH, E.G. MYAPP.EXE)", 1, 208, 164, 650, 184);
-		add(IK_BTN, ID_BROWSE_EXE, L"Browse", 1, 554, 186, 650, 216);
-		add(IK_NOTE, 0, L"Shortcuts and \"Launch\" start this file.", 1, 208, 222, 650, 242);
+		add(IK_HEAD, 0, L"WHERE DO THE FILES COME FROM?", 1, 208, 72, 650, 92);
+		add(IK_SEG, ID_SRC_FILES, L"Add files", 1, 208, 94, 427, 120);
+		g_it[g_nit - 1].sel = !g_link;
+		add(IK_SEG, ID_SRC_LINK, L"Download from a link", 1, 431, 94, 650, 120);
+		g_it[g_nit - 1].sel = g_link;
+		if (!g_link) {
+			add(IK_HEAD, 0, L"APP FOLDER (EVERYTHING INSIDE IS PACKED)", 1, 208, 128, 650, 146);
+			add(IK_BTN, ID_BROWSE_SRC, L"Browse", 1, 554, 148, 650, 174);
+			add(IK_NOTE, 0, g_summary, 1, 208, 176, 650, 196);
+			add(IK_HEAD, 0, L"MAIN PROGRAM (RELATIVE PATH, E.G. MYAPP.EXE)", 1, 208, 200, 650, 218);
+			add(IK_BTN, ID_BROWSE_EXE, L"Browse", 1, 554, 220, 650, 246);
+			add(IK_NOTE, 0, L"Shortcuts and \"Launch\" start this file.", 1, 208, 250, 650, 270);
+		}
+		else {
+			add(IK_HEAD, 0, L"DOWNLOAD LINK (HTTPS)", 1, 208, 128, 650, 146);
+			add(IK_NOTE, 0, L"A zip is unpacked. Any other file becomes the main program.", 1, 208, 176, 650, 196);
+			add(IK_HEAD, 0, L"MAIN PROGRAM (RELATIVE PATH, E.G. MYAPP.EXE)", 1, 208, 200, 650, 218);
+			add(IK_HEAD, 0, L"SHA-256 CHECKSUM (OPTIONAL, RECOMMENDED)", 1, 208, 254, 650, 272);
+		}
 		break;
 
 	case PG_OPTIONS:
@@ -181,12 +196,17 @@ static void build_items(void)
 
 static int field_visible(int i)
 {
-	return g_f[i].page == g_page && (i != F_CTX || g_ctx);
+	if (g_f[i].page != g_page) return 0;
+	if (i == F_CTX) return g_ctx;
+	if (i == F_SRC) return !g_link;
+	if (i == F_URL || i == F_SHA) return g_link;
+	return 1;
 }
 
 static void position_fields(void)
 {
 	int i, h = S(18);
+	g_f[F_EXE].x2 = g_link ? 650 : 544;
 	for (i = 0; i < F_COUNT; ++i)
 		MoveWindow(g_f[i].h, S(g_f[i].x1 + 10), S(g_f[i].y1) + (S(g_f[i].y2 - g_f[i].y1) - h) / 2,
 			S(g_f[i].x2 - g_f[i].x1 - 20), h, TRUE);
@@ -218,10 +238,16 @@ static void default_output(void)
 	WCHAR src[MAX_PATH], par[MAX_PATH], name[100], file[140];
 	WCHAR* s;
 	ftext(F_SRC, src, MAX_PATH);
-	lstrcpynW(par, src, MAX_PATH);
-	while (lstrlenW(par) > 3 && par[lstrlenW(par) - 1] == L'\\') par[lstrlenW(par) - 1] = 0;
-	s = wcsrchr(par, L'\\');
-	if (s) { if (s - par <= 2) s[1] = 0; else *s = 0; }
+	if (g_link || !src[0]) {
+		if (SHGetFolderPathW(NULL, CSIDL_DESKTOPDIRECTORY, NULL, 0, par) != S_OK)
+			lstrcpyW(par, L"C:\\");
+	}
+	else {
+		lstrcpynW(par, src, MAX_PATH);
+		while (lstrlenW(par) > 3 && par[lstrlenW(par) - 1] == L'\\') par[lstrlenW(par) - 1] = 0;
+		s = wcsrchr(par, L'\\');
+		if (s) { if (s - par <= 2) s[1] = 0; else *s = 0; }
+	}
 	sanitize_file_name(g_build_cfg.name, name, 100);
 	wsprintfW(file, L"%s-setup.exe", name);
 	path_join(src, MAX_PATH, par, file);
@@ -434,9 +460,20 @@ static int is_dir(const WCHAR* p)
 	return a != INVALID_FILE_ATTRIBUTES && (a & FILE_ATTRIBUTE_DIRECTORY);
 }
 
+static int sha_ok(const WCHAR* s)
+{
+	int i, n = lstrlenW(s);
+	if (n == 0) return 1;
+	if (n != 64) return 0;
+	for (i = 0; i < n; ++i)
+		if (!((s[i] >= L'0' && s[i] <= L'9') || (s[i] >= L'a' && s[i] <= L'f') || (s[i] >= L'A' && s[i] <= L'F')))
+			return 0;
+	return 1;
+}
+
 static int validate_page(void)
 {
-	WCHAR t[MAX_PATH], full[MAX_PATH];
+	WCHAR t[MAX_PATH], full[MAX_PATH], url[512];
 	char u8[600];
 
 	switch (g_page) {
@@ -449,6 +486,23 @@ static int validate_page(void)
 		return 1;
 
 	case PG_FILES:
+		if (g_link) {
+			ftext(F_URL, url, 512);
+			if (_wcsnicmp(url, L"https://", 8) != 0 || lstrlenW(url) < 12 || wcschr(url, L' ')) {
+				lstrcpyW(g_msg, L"Enter a link that starts with https://");
+				return 0;
+			}
+			ftext(F_EXE, t, 260);
+			if (!t[0]) { lstrcpyW(g_msg, L"Enter the main program, for example MyApp.exe."); return 0; }
+			if (!WideCharToMultiByte(CP_UTF8, 0, t, -1, u8, sizeof(u8), NULL, NULL) ||
+				wcschr(t, L'/') || !rel_path_is_safe(u8) || t[0] == L'\\') {
+				lstrcpyW(g_msg, L"The main program must be a relative path inside the download.");
+				return 0;
+			}
+			ftext(F_SHA, t, 80);
+			if (!sha_ok(t)) { lstrcpyW(g_msg, L"The checksum must be 64 hex characters, or empty."); return 0; }
+			return 1;
+		}
 		ftext(F_SRC, t, MAX_PATH);
 		if (!is_dir(t)) { lstrcpyW(g_msg, L"Choose an existing app folder."); return 0; }
 		refresh_summary();
@@ -513,6 +567,9 @@ static void gather_config(void)
 	}
 	lstrcpynW(g_build_cfg.exe, t, 260);
 	ftext(F_CTX, g_build_cfg.ctxlabel, 64);
+	g_build_cfg.source_link = g_link;
+	ftext(F_URL, g_build_cfg.url, 512);
+	ftext(F_SHA, g_build_cfg.sha256, 72);
 	g_build_cfg.ctx_offer = g_ctx;
 	g_build_cfg.desktop = g_desktop;
 	g_build_cfg.allusers = g_allusers;
@@ -631,6 +688,11 @@ static void activate(int id)
 	case ID_BROWSE_EXE: browse_exe(); break;
 	case ID_BROWSE_OUT: browse_out(); break;
 	case ID_SHOW: show_in_folder(); break;
+	case ID_SRC_FILES: case ID_SRC_LINK:
+		g_link = (id == ID_SRC_LINK);
+		g_msg[0] = 0;
+		build_items(); position_fields(); update_fields(); first_focus();
+		break;
 	case ID_THEME: toggle_theme(); break;
 	case ID_PICK_ICON: case ID_PICK_LOGO: case ID_PICK_BANNER: pick_asset(id - ID_PICK_ICON); break;
 	case ID_CLR_ICON: case ID_CLR_LOGO: case ID_CLR_BANNER: clear_asset(id - ID_CLR_ICON); break;
@@ -847,10 +909,12 @@ static void init_fields(HWND hwnd, HINSTANCE hi)
 		{ PG_DETAILS, 490, 94, 650, 124, 31 },
 		{ PG_DETAILS, 208, 156, 650, 186, 63 },
 		{ PG_DETAILS, 208, 218, 650, 248, 159 },
-		{ PG_FILES, 208, 94, 544, 124, MAX_PATH - 1 },
-		{ PG_FILES, 208, 186, 544, 216, 259 },
+		{ PG_FILES, 208, 148, 544, 174, MAX_PATH - 1 },
+		{ PG_FILES, 208, 220, 544, 246, 259 },
 		{ PG_OPTIONS, 208, 254, 650, 284, 63 },
-		{ PG_OUTPUT, 208, 94, 544, 124, MAX_PATH - 1 }
+		{ PG_OUTPUT, 208, 94, 544, 124, MAX_PATH - 1 },
+		{ PG_FILES, 208, 148, 650, 174, 511 },
+		{ PG_FILES, 208, 274, 650, 300, 64 }
 	};
 	int i;
 	for (i = 0; i < F_COUNT; ++i) {

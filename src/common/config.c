@@ -37,13 +37,13 @@ void cfg_finish(AppConfig* c)
 
 static int put(char* out, size_t cap, size_t* pos, const char* key, const WCHAR* wval, int ival, int isint)
 {
-  char val[1200];
+  char val[1600];
   int n;
   if (isint) wsprintfA(val, "%d", ival);
   else {
-    WCHAR clean[300];
+    WCHAR clean[520];
     int i, k = 0;
-    for (i = 0; wval[i] && k < 299; ++i) if (wval[i] >= 32) clean[k++] = wval[i];
+    for (i = 0; wval[i] && k < 519; ++i) if (wval[i] >= 32) clean[k++] = wval[i];
     clean[k] = 0;
     if (!WideCharToMultiByte(CP_UTF8, 0, clean, -1, val, sizeof(val), NULL, NULL)) val[0] = 0;
   }
@@ -73,7 +73,10 @@ int cfg_serialize(const AppConfig* c, char* out, size_t cap)
     put(out, cap, &pos, "allusers", NULL, c->allusers, 1) &&
     put(out, cap, &pos, "launch", NULL, c->launch, 1) &&
     put(out, cap, &pos, "logo_len", NULL, (int)c->logo_len, 1) &&
-    put(out, cap, &pos, "banner_len", NULL, (int)c->banner_len, 1))) return 0;
+    put(out, cap, &pos, "banner_len", NULL, (int)c->banner_len, 1) &&
+    put(out, cap, &pos, "source_link", NULL, c->source_link, 1) &&
+    put(out, cap, &pos, "url", c->url, 0, 0) &&
+    put(out, cap, &pos, "sha256", c->sha256, 0, 0))) return 0;
   return (int)pos;
 }
 
@@ -113,6 +116,10 @@ int cfg_parse(AppConfig* c, const char* text)
     else if (!strcmp(line, "launch")) c->launch = atoi(eq) != 0;
     else if (!strcmp(line, "logo_len")) c->logo_len = (unsigned)strtoul(eq, NULL, 10);
     else if (!strcmp(line, "banner_len")) c->banner_len = (unsigned)strtoul(eq, NULL, 10);
+    else if (!strcmp(line, "banner_len")) c->banner_len = (unsigned)strtoul(eq, NULL, 10);
+    else if (!strcmp(line, "source_link")) c->source_link = atoi(eq) != 0;
+    else if (!strcmp(line, "url")) set_w(c->url, 512, eq);
+    else if (!strcmp(line, "sha256")) set_w(c->sha256, 72, eq);
   }
   if (!c->name[0] || !c->exe[0]) return 0;
   cfg_finish(c);

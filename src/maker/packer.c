@@ -235,6 +235,36 @@ static int apply_icon(const unsigned char* stub, size_t stub_len, const unsigned
   return ok;
 }
 
+static int sha_hex_ok(const WCHAR* s)
+{
+  int i, n = lstrlenW(s);
+  if (n == 0) return 1;
+  if (n != 64) return 0;
+  for (i = 0; i < n; ++i)
+    if (!((s[i] >= L'0' && s[i] <= L'9') || (s[i] >= L'a' && s[i] <= L'f') || (s[i] >= L'A' && s[i] <= L'F')))
+      return 0;
+  return 1;
+}
+
+static int link_cfg_ok(const AppConfig* c, WCHAR* err, size_t cap)
+{
+  char u8[600];
+  if (_wcsnicmp(c->url, L"https://", 8) != 0 || lstrlenW(c->url) < 12 || wcschr(c->url, L' ')) {
+    set_err(err, cap, L"The download link must start with https://");
+    return 0;
+  }
+  if (!c->exe[0] || !WideCharToMultiByte(CP_UTF8, 0, c->exe, -1, u8, sizeof(u8), NULL, NULL) ||
+    !rel_path_is_safe(u8)) {
+    set_err(err, cap, L"The main program must be a relative path.");
+    return 0;
+  }
+  if (!sha_hex_ok(c->sha256)) {
+    set_err(err, cap, L"The checksum must be 64 hex characters.");
+    return 0;
+  }
+  return 1;
+}
+
 int pack_installer(const AppConfig* cfg_in, const WCHAR* folder, const WCHAR* out_path,
   const unsigned char* stub, size_t stub_len, const PackAssets* assets,
   ProgressCb cb, void* ud, WCHAR* err, size_t errcap)
@@ -280,8 +310,14 @@ int pack_installer(const AppConfig* cfg_in, const WCHAR* folder, const WCHAR* ou
     }
     stub = stub2;
   }
-  if (cb) cb(ud, 0, L"Scanning files...", 0);
-  if (!walk(&s, folder, "")) { set_err(err, errcap, s.err[0] ? s.err : L"Could not read the source folder."); goto done; }
+  if (cfg->source_link) {
+    if (cb) cb(ud, 20, L"Checking download details...", 0);
+    if (!link_cfg_ok(cfg, err, errcap)) goto done;
+    if (cb) cb(ud, 90, L"Download details checked", 1);
+  }
+  else {
+    if (cb) cb(ud, 0, L"Scanning files...", 0);
+    if (!walk(&s, folder, "")) { set_err(err, errcap, s.err[0] ? s.err : L"Could not read the source folder."); goto done; }
   if (s.n == 0) { set_err(err, errcap, L"The source folder has no files to pack."); goto done; }
   if (s.total > 1500ull * 1024 * 1024) { set_err(err, errcap, L"The source folder is larger than 1.5 GB."); goto done; }
 
@@ -338,6 +374,7 @@ int pack_installer(const AppConfig* cfg_in, const WCHAR* folder, const WCHAR* ou
     goto done;
   }
   if (cb) cb(ud, 96, L"Compressed and verified", 1);
+  }
 
   cfg_len = cfg_serialize(cfg, cfgtxt, sizeof(cfgtxt));
   if (cfg_len <= 0) { set_err(err, errcap, L"The installer details are too long."); goto done; }

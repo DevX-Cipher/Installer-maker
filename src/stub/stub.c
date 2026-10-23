@@ -57,7 +57,9 @@ int WINAPI WinMain(HINSTANCE hi, HINSTANCE hprev, LPSTR cmd, int show)
 	else { allusers = g_cfg.allusers; default_install_dir(allusers, dir0, MAX_PATH); }
 
 	total = payload_peek_total();
-	if (total) wsprintfW(space, L"About %u MB of disk space required.",
+	if (g_cfg.source_link)
+		lstrcpyW(space, L"Setup downloads the app files, so an internet connection is needed.");
+	else if (total) wsprintfW(space, L"About %u MB of disk space required.",
 		(unsigned)(total / (1024 * 1024)) + 1);
 	else lstrcpyW(space, L"Warning: the installer data is missing.");
 

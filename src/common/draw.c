@@ -256,6 +256,12 @@ void draw_item(HDC dc, const Item* it, int hov)
 		break;
 	}
 
+	case IK_SEG:
+		fill = (hov && !it->sel) ? C_BTNHOV : C_HEAD;
+		rrect(dc, r, fill, it->sel ? C_ACCENT : C_BTNBD, 8);
+		txt(dc, g_font, it->sel ? C_TEXT : C_TEXT2, r, TXT_C, it->text);
+		break;
+
 	case IK_BTN:
 		fill = !it->enabled ? C_HEAD : (hov ? C_BTNHOV : C_HEAD);
 		fg = it->enabled ? C_TEXT : C_DIM;

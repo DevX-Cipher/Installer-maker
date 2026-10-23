@@ -36,6 +36,9 @@ typedef struct {
   WCHAR id[64];            /* derived: registry-safe name */
   WCHAR uninstall_key[200];
   WCHAR context_key[200];
+  int   source_link;   /* 0 = packed files, 1 = download from a link */
+  WCHAR url[512];
+  WCHAR sha256[72];    /* 64 hex characters, or empty */
 } AppConfig;
 
 extern AppConfig g_cfg;

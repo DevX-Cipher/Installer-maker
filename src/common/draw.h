@@ -35,20 +35,21 @@ int  system_prefers_light(void);
 #define TXT_R  (DT_SINGLELINE | DT_VCENTER | DT_RIGHT | DT_NOPREFIX)
 #define TXT_W  (DT_LEFT | DT_WORDBREAK | DT_NOPREFIX)
 
-enum { IK_HEAD, IK_TEXT, IK_NOTE, IK_CHECK, IK_BTN, IK_ACCENT, IK_THEME };
+enum { IK_HEAD, IK_TEXT, IK_NOTE, IK_CHECK, IK_BTN, IK_ACCENT, IK_THEME, IK_SEG };
 
 typedef struct {
   int kind, id, enabled;
   const WCHAR* text;
   RECT r;
-  int* val;            /* checkbox state */
+  int* val;
+  int sel;
 } Item;
 
 typedef struct DImage DImage;
-extern DImage* g_logo_img;     /* shown instead of the initials badge */
-extern DImage* g_banner_img;   /* sidebar banner */
+extern DImage* g_logo_img;     
+extern DImage* g_banner_img;   
 
-DImage* img_load(const void* data, size_t len);   /* PNG/JPG/BMP/GIF; needs draw_init first */
+DImage* img_load(const void* data, size_t len);   
 void    img_free(DImage* im);
 void    img_draw(HDC dc, DImage* im, RECT dst, int cover, int rad);
 

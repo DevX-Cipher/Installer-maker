@@ -75,6 +75,7 @@
     <ClInclude Include="..\src\common\draw.h" />
     <ClInclude Include="..\src\common\payload.h" />
     <ClInclude Include="..\third_party\lzma\lzma_decoder.h" />
+    <ClInclude Include="..\third_party\lzma\unzip.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\stub\app.manifest" />
