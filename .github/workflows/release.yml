@@ -15,27 +15,54 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Visual Studio
         uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Determine Next Version
+        id: version
+        shell: pwsh
+        run: |
+          git fetch --tags
+
+          $latest = git tag --sort=-version:refname | Select-Object -First 1
+
+          if (-not $latest) {
+            $newVersion = "v1.0.0"
+          } else {
+            if ($latest -match '^v(\d+)\.(\d+)\.(\d+)$') {
+              $major = [int]$Matches[1]
+              $minor = [int]$Matches[2]
+              $patch = [int]$Matches[3] + 1
+              $newVersion = "v$major.$minor.$patch"
+            } else {
+              throw "Latest tag format is invalid: $latest"
+            }
+          }
+
+          echo "version=$newVersion" >> $env:GITHUB_OUTPUT
+
+      - name: Create Tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git tag ${{ steps.version.outputs.version }}
+          git push origin ${{ steps.version.outputs.version }}
 
       - name: Build
         run: build.bat
         shell: cmd
 
-      - name: Delete Existing Release
-        uses: dev-drprasad/delete-tag-and-release@v1.1
-        continue-on-error: true
-        with:
-          delete_release: true
-          tag_name: latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: latest
-          name: Latest Build
+          tag_name: ${{ steps.version.outputs.version }}
+          name: ${{ steps.version.outputs.version }}
           files: |
             dist\installer-maker.exe
