@@ -1,10 +1,9 @@
 name: Build Release
 
 on:
-  workflow_dispatch:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -14,18 +13,29 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Setup Visual Studio
-      uses: ilammy/msvc-dev-cmd@v1
+      - name: Setup Visual Studio
+        uses: ilammy/msvc-dev-cmd@v1
 
-    - name: Build
-      run: |
-        build.bat
-      shell: cmd
+      - name: Build
+        run: build.bat
+        shell: cmd
 
-    - name: Create Release
-      uses: softprops/action-gh-release@v2
-      with:
-        files: |
-          build\**\*.exe
+      - name: Delete Existing Release
+        uses: dev-drprasad/delete-tag-and-release@v1.1
+        continue-on-error: true
+        with:
+          delete_release: true
+          tag_name: latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest Build
+          files: |
+            dist\installer-maker.exe
